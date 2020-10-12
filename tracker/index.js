@@ -126,6 +126,13 @@ import { removeTrailingSlash } from '../lib/url';
     });
   }
 
+  const addEventsToElementAndChildren = element => {
+    addEventsToElement(element);
+    if (element.childNodes) {
+      element.childNodes.forEach(addEventsToElementAndChildren);
+    }
+  }
+
   const addEvents = () => {
     console.log('in addEvents')
     document.querySelectorAll("[class*='umami--']").forEach(addEventsToElement);
@@ -147,7 +154,7 @@ import { removeTrailingSlash } from '../lib/url';
         console.log('mutation', mutation);
         mutation.addedNodes.forEach(addedNode => {
           console.log('addedNode', addedNode);
-          addEventsToElement(addedNode);
+          addEventsToElementAndChildren(addedNode);
         });
       });
     });
@@ -198,6 +205,8 @@ import { removeTrailingSlash } from '../lib/url';
   }
 
   /* Start */
+
+  console.log(document.body.innerHTML)
 
   if (autoTrack) {
     history.pushState = hook(history, 'pushState', handlePush);
