@@ -113,7 +113,10 @@ import { removeTrailingSlash } from '../lib/url';
     console.log('addEventsToElement', element);
     element.className.split(' ').forEach(className => {
       if (/^umami--([a-z]+)--([a-z0-9_]+[a-z0-9-_]+)$/.test(className)) {
+
         const [, type, value] = className.split('--');
+        console.log('adding event', type, value, element);
+
         const listener = () => trackEvent(value, type);
 
         listeners.push([element, type, listener]);
@@ -143,14 +146,13 @@ import { removeTrailingSlash } from '../lib/url';
         console.log('mutation', mutation);
         mutation.addedNodes.forEach(addedNode => {
           console.log('addedNode', addedNode);
-          if (/umami--/.test(addedNode.className)) {
-            addEventsToElement(addedNode);
-          }
+          addEventsToElement(addedNode);
         });
       });
     });
 
     mutationObserver.observe(document.documentElement || document.body, {
+      attributes: true,
       childList: true,
       subtree: true
     });
