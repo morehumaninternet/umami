@@ -122,6 +122,7 @@ import { removeTrailingSlash } from '../lib/url';
   }
 
   const addEvents = () => {
+    console.log('in addEvents')
     document.querySelectorAll("[class*='umami--']").forEach(addEventsToElement);
   };
 
@@ -134,10 +135,13 @@ import { removeTrailingSlash } from '../lib/url';
 
   const addMutationObserver = () => {
     if (!window.MutationObserver) return;
+    console.log('window.MutationObserver exists')
 
     mutationObserver = new MutationObserver(mutations => {
       mutations.forEach(mutation => {
+        console.log('mutation', mutation);
         mutation.addedNodes.forEach(addedNode => {
+          console.log('addedNode', addedNode);
           if (/umami--/.test(addedNode.className)) {
             addEventsToElement(addedNode);
           }
@@ -161,6 +165,7 @@ import { removeTrailingSlash } from '../lib/url';
   /* Handle history changes */
 
   const handlePush = (state, title, url) => {
+    console.log('in handlePush', state, title, url)
     removeEvents();
 
     currentRef = currentUrl;
@@ -199,7 +204,10 @@ import { removeTrailingSlash } from '../lib/url';
     addEvents();
   }
 
+  console.log('observeMutations', observeMutations)
   if (observeMutations) {
+    console.log('adding mutation observer');
     addMutationObserver();
+    console.log('done adding mutation observer');
   }
 })(window);
