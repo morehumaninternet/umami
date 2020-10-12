@@ -17,6 +17,7 @@ import { removeTrailingSlash } from '../lib/url';
   const website = attr('data-website-id');
   const hostUrl = attr('data-host-url');
   const autoTrack = attr('data-auto-track') !== 'false';
+  const observeMutations = attr('data-observe-mutations') !== 'false';
   const dnt = attr('data-do-not-track');
   const useCache = attr('data-cache');
   const domains = attr('data-domains');
@@ -40,6 +41,7 @@ import { removeTrailingSlash } from '../lib/url';
   const listeners = [];
   let currentUrl = `${pathname}${search}`;
   let currentRef = document.referrer;
+  let mutationObserver;
 
   /* Collect metrics */
 
@@ -107,18 +109,20 @@ import { removeTrailingSlash } from '../lib/url';
 
   /* Handle events */
 
-  const addEvents = () => {
-    document.querySelectorAll("[class*='umami--']").forEach(element => {
-      element.className.split(' ').forEach(className => {
-        if (/^umami--([a-z]+)--([a-z0-9_]+[a-z0-9-_]+)$/.test(className)) {
-          const [, type, value] = className.split('--');
-          const listener = () => trackEvent(value, type);
+  const addEventsToElement = element => {
+    element.className.split(' ').forEach(className => {
+      if (/^umami--([a-z]+)--([a-z0-9_]+[a-z0-9-_]+)$/.test(className)) {
+        const [, type, value] = className.split('--');
+        const listener = () => trackEvent(value, type);
 
-          listeners.push([element, type, listener]);
-          element.addEventListener(type, listener, true);
-        }
-      });
+        listeners.push([element, type, listener]);
+        element.addEventListener(type, listener, true);
+      }
     });
+  }
+
+  const addEvents = () => {
+    document.querySelectorAll("[class*='umami--']").forEach(addEventsToElement);
   };
 
   const removeEvents = () => {
@@ -126,6 +130,32 @@ import { removeTrailingSlash } from '../lib/url';
       element && element.removeEventListener(type, listener, true);
     });
     listeners.length = 0;
+  };
+
+  const addMutationObserver = () => {
+    if (!window.MutationObserver) return;
+
+    mutationObserver = new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(addedNode => {
+          if (/umami--/.test(addedNode.className)) {
+            addEventsToElement(addedNode);
+          }
+        });
+      });
+    });
+
+    mutationObserver.observe(document.documentElement || document.body, {
+      childList: true,
+      subtree: true
+    });
+  };
+
+  const removeMutationObserver = () => {
+    if (mutationObserver) {
+      mutationObserver.disconnect();
+      mutationObserver = undefined;
+    }
   };
 
   /* Handle history changes */
@@ -167,5 +197,9 @@ import { removeTrailingSlash } from '../lib/url';
     trackView(currentUrl, currentRef);
 
     addEvents();
+  }
+
+  if (observeMutations) {
+    addMutationObserver();
   }
 })(window);
