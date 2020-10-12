@@ -110,6 +110,7 @@ import { removeTrailingSlash } from '../lib/url';
   /* Handle events */
 
   const addEventsToElement = element => {
+    if (!element.className) return;
     console.log('addEventsToElement', element);
     element.className.split(' ').forEach(className => {
       if (/^umami--([a-z]+)--([a-z0-9_]+[a-z0-9-_]+)$/.test(className)) {
