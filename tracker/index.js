@@ -110,13 +110,9 @@ import { removeTrailingSlash } from '../lib/url';
   /* Handle events */
 
   const addEventsToElement = element => {
-    if (!element.className) return;
-    console.log('addEventsToElement', element);
     element.className.split(' ').forEach(className => {
       if (/^umami--([a-z]+)--([a-z0-9_]+[a-z0-9-_]+)$/.test(className)) {
-
         const [, type, value] = className.split('--');
-        console.log('adding event', type, value, element);
 
         const listener = () => trackEvent(value, type);
 
@@ -127,14 +123,15 @@ import { removeTrailingSlash } from '../lib/url';
   }
 
   const addEventsToElementAndChildren = element => {
-    addEventsToElement(element);
+    if (element.className && /umami--/.test(element.className)) {
+      addEventsToElement(element);
+    }
     if (element.childNodes) {
       element.childNodes.forEach(addEventsToElementAndChildren);
     }
   }
 
   const addEvents = () => {
-    console.log('in addEvents')
     document.querySelectorAll("[class*='umami--']").forEach(addEventsToElement);
   };
 
@@ -147,36 +144,21 @@ import { removeTrailingSlash } from '../lib/url';
 
   const addMutationObserver = () => {
     if (!window.MutationObserver) return;
-    console.log('window.MutationObserver exists')
 
     mutationObserver = new MutationObserver(mutations => {
       mutations.forEach(mutation => {
-        console.log('mutation', mutation);
         mutation.addedNodes.forEach(addedNode => {
-          console.log('addedNode', addedNode);
           addEventsToElementAndChildren(addedNode);
         });
       });
     });
 
-    mutationObserver.observe(document.documentElement || document.body, {
-      attributes: true,
-      childList: true,
-      subtree: true
-    });
-  };
-
-  const removeMutationObserver = () => {
-    if (mutationObserver) {
-      mutationObserver.disconnect();
-      mutationObserver = undefined;
-    }
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
   };
 
   /* Handle history changes */
 
   const handlePush = (state, title, url) => {
-    console.log('in handlePush', state, title, url)
     removeEvents();
 
     currentRef = currentUrl;
@@ -191,7 +173,9 @@ import { removeTrailingSlash } from '../lib/url';
 
     trackView(currentUrl, currentRef);
 
-    setTimeout(addEvents, 300);
+    if (!mutationObserver) {
+      setTimeout(addEvents, 300);
+    }
   };
 
   /* Global */
@@ -206,8 +190,6 @@ import { removeTrailingSlash } from '../lib/url';
 
   /* Start */
 
-  console.log(document.body.innerHTML)
-
   if (autoTrack) {
     history.pushState = hook(history, 'pushState', handlePush);
     history.replaceState = hook(history, 'replaceState', handlePush);
@@ -217,10 +199,7 @@ import { removeTrailingSlash } from '../lib/url';
     addEvents();
   }
 
-  console.log('observeMutations', observeMutations)
   if (observeMutations) {
-    console.log('adding mutation observer');
     addMutationObserver();
-    console.log('done adding mutation observer');
   }
 })(window);
